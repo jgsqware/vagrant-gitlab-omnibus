@@ -1,0 +1,3 @@
+[submodule "omnibus-gitlab"]
+	path = omnibus-gitlab
+	url = git@gitlab.com:garciagonzalez.julien/omnibus-gitlab.git
