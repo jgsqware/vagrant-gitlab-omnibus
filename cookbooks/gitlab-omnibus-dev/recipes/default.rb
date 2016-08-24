@@ -23,7 +23,6 @@ directory install_dir do
   recursive true
 end
 
-
 connection_is_up = false
 
 ruby_block "check sayc" do
@@ -44,37 +43,42 @@ ruby_block "check sayc" do
   end
 end
 
-ruby_block "test" do
-  block do
-    p "CONNECTION::#{connection_is_up}"
-  end
-end
-
 remote_file "#{install_dir}/script.deb.sh" do
   source 'https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh'
   owner 'vagrant'
   group 'vagrant'
   mode '0755'
   action :create
-end unless !connection_is_up
+end unless connection_is_up
 
 bash 'install_repo_gitlab_ce' do
   cwd install_dir.to_s
-  # user 'vagrant'
-  # group 'vagrant'
   code <<-EOH
     ./script.deb.sh
     EOH
-end unless !connection_is_up
+end unless connection_is_up
 
 apt_package 'gitlab-ce' do
   version '8.10.5-ce.0'
   action :install
   options '--force-yes'
-end unless !connection_is_up
+end unless connection_is_up
 
-# sudo mv /opt/gitlab/embedded/cookbooks/gitlab /opt/gitlab/embedded/cookbooks/gitlab.$(date +%s)
-remote_directory "/opt/gitlab/embedded/cookbooks/gitlab.#{Time.new.to_i}" do
-  source "/opt/gitlab/embedded/cookbooks/gitlab"
-
+bash 'backup original gitlab cookbooks' do
+  code <<-EOH
+  
+  EOH
+  action :run
 end
+
+gitlab_cookbook_folder = "/opt/gitlab/embedded/cookbooks/gitlab"
+
+execute 'backup original gitlab cookbooks' do
+    command "mv #{gitlab_cookbook_folder} #{gitlab_cookbook_folder}.$(date +%s)"
+    only_if { ::File.exists?(gitlab_cookbook_folder)}
+end
+
+link gitlab_cookbook_folder do
+  to '/vagrant/omnibus-gitlab/files/gitlab-cookbooks/gitlab'
+end
+
